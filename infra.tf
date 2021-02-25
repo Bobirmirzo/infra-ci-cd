@@ -170,7 +170,7 @@ resource "aws_eip" "server_eip" {
 }
 
 ## Server
-resource "aws_instance" "bastion" {
+resource "aws_instance" "server" {
   ami                       = "ami-0f2dd5fc989207c82"
   instance_type             = "t2.micro"
   availability_zone         = "ap-northeast-1a"
@@ -186,3 +186,31 @@ resource "aws_instance" "bastion" {
   }
 }
 
+# Subnet group
+resource "aws_db_subnet_group" "db_subnet_group" {
+  name       = "${var.PREFIX}-db-subnet-group"
+  subnet_ids = [aws_subnet.private_subnet.id,
+                aws_subnet.private_subnet_db1.id,
+                aws_subnet.private_subnet_db2.id]
+
+  tags = {
+    Name = "My DB subnet group"
+  }
+}
+
+resource "aws_rds_cluster" "aurora_cluster" {
+  cluster_identifier              = "${var.PREFIX}-cluster"
+  storage_encrypted               = true
+  kms_key_id                      = aws_kms_key.KMSkeyDB.arn
+  engine                          = "aurora-mysql"
+  engine_version                  = "5.7.mysql_aurora.2.09.1"
+  availability_zones              = ["ap-northeast-1c", "ap-northeast-1a", "ap-northeast-1d"]
+  database_name                   = var.DB_NAME
+  master_username                 = "root"
+  master_password                 = var.DB_PASSWORD
+  backup_retention_period         = 2
+  db_subnet_group_name            = aws_db_subnet_group.db_subnet_group.name
+  skip_final_snapshot             = true
+  vpc_security_group_ids          = [aws_security_group.sql_sg.id]
+  db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.db_parameter_group.name
+}
