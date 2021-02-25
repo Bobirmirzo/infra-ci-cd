@@ -17,5 +17,5 @@ RUNNER_TOKEN="$(curl -XPOST -fsSL \
   "${_FULL_URL}" \
 | jq -r '.token')"
 
-./config.sh --url https://github.com/${ORG}/${REPO} --token "${RUNNER_TOKEN}" --name "aws-runner" --work _work --labels aws --unattended --replace
+./config.sh --url https://github.com/${ORG}/${REPO} --token "${RUNNER_TOKEN}" --name "aws-runner" --work _work --labels aws-runner --unattended --replace
 ./bin/runsvc.sh

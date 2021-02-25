@@ -1,0 +1,43 @@
+name: aws-terraform-apply
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'self-host-runner-ECS/**'
+
+jobs:
+  aws-cd:
+    runs-on: [self-hosted, aws-runner]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: clone repository
+        uses: actions/checkout@v2
+
+      - name: set up terraform
+        run: |
+          wget https://releases.hashicorp.com/terraform/0.14.3/terraform_0.14.3_linux_amd64.zip
+          unzip terraform_0.14.3_linux_amd64.zip
+          mv terraform /usr/local/bin/
+      - name: terraform init
+        id: tf-init
+        run: terraform init
+
+      - name: setup tfnotify
+        run: |
+          curl -fL -o tfnotify.tar.gz https://github.com/mercari/tfnotify/releases/download/v0.7.0/tfnotify_linux_amd64.tar.gz
+          tar -xzf tfnotify.tar.gz
+          mv tfnotify /usr/local/bin/
+
+      - name: terraform apply
+        id: plan
+        run: |
+          terraform apply >> result.temp
+          cat result.temp | tfnotify --config .tfnotify/slack.yml apply --message "$(date)"
+        env:
+          SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          SLACK_BOT_NAME: ${{ secrets.SLACK_BOT_NAME }}
+        continue-on-error: false

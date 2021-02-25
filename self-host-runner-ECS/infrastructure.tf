@@ -212,6 +212,10 @@ resource "aws_secretsmanager_secret_version" "AWS_ACCESS_KEY_ID_version" {
 }
 
 # Task definition
+resource "aws_cloudwatch_log_group" "ecs-log-group" {
+  name = "/ecs/${var.PREFIX}-task-def"
+}
+
 resource "aws_ecs_task_definition" "task_definition" {
   family                   = "${var.PREFIX}-task-def"
   network_mode             = "awsvpc"

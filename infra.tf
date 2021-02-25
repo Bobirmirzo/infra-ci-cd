@@ -173,7 +173,7 @@ resource "aws_eip" "server_eip" {
 resource "aws_instance" "server" {
   ami                       = "ami-0f2dd5fc989207c82"
   instance_type             = "t2.micro"
-  availability_zone         = "ap-northeast-1a"
+  availability_zone         = "ap-northeast-1c"
   key_name                  = "access-key"
 
   network_interface {
@@ -182,7 +182,7 @@ resource "aws_instance" "server" {
   }
 
   tags = {
-    Name = "${var.PREFIX}_bastion"
+    Name = "${var.PREFIX}_server"
   }
 }
 
@@ -198,10 +198,26 @@ resource "aws_db_subnet_group" "db_subnet_group" {
   }
 }
 
+resource "aws_security_group" "sql_sg" {
+  name        = "${var.PREFIX}-sql-sg"
+  description = "Allow incoming traffic for database"
+  vpc_id      = aws_vpc.vpc.id
+
+  ingress {
+    description     = "MySQL/Aurora"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.server_sg.id]
+  }
+
+  tags = {
+    Name = "${var.PREFIX}_sql_sg"
+  }
+}
+
 resource "aws_rds_cluster" "aurora_cluster" {
   cluster_identifier              = "${var.PREFIX}-cluster"
-  storage_encrypted               = true
-  kms_key_id                      = aws_kms_key.KMSkeyDB.arn
   engine                          = "aurora-mysql"
   engine_version                  = "5.7.mysql_aurora.2.09.1"
   availability_zones              = ["ap-northeast-1c", "ap-northeast-1a", "ap-northeast-1d"]
@@ -212,5 +228,4 @@ resource "aws_rds_cluster" "aurora_cluster" {
   db_subnet_group_name            = aws_db_subnet_group.db_subnet_group.name
   skip_final_snapshot             = true
   vpc_security_group_ids          = [aws_security_group.sql_sg.id]
-  db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.db_parameter_group.name
 }

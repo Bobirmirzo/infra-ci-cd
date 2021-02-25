@@ -1,0 +1,30 @@
+
+ci: github-actions
+notifier:
+  slack:
+    token: $SLACK_TOKEN
+    channel: $SLACK_CHANNEL_ID
+    bot: $SLACK_BOT_NAME
+terraform:
+  apply:
+    template: |
+      {{ .Message }}
+      {{if .Result}}
+      ```
+      {{ .Result }}
+      ```
+      {{end}}
+      ```
+      {{ .Body }}
+      ```
+    when_add_or_update_only:
+      label: "add-or-update"
+    when_no_changes:
+      label: "no-changes"
+    when_plan_error:
+      label: "error"
+    when_destroy:
+      label: "destroy"
+      template: |
+        ## :warning: WARNING: Resource Deletion will happen :warning:
+        This plan contains **resource deletion**. Please check the plan result very carefully!
